@@ -1,23 +1,30 @@
-import torch
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from dataset import PlaceRecognitionDataset
 from model import PlaceRecognitionModel
+from pytorch_lightning.tuner.tuning import Tuner
 
 
 def main():
     data_root = 'Eynsham'
-    max_distance = 5.0
-    batch_size = 16
-    num_epochs = 50
+    max_distance = 1000
+    distance_threshold = 200
+    batch_size = 2
+    max_epochs = 2
 
-    dataset = PlaceRecognitionDataset(data_root, max_distance)
+    dataset = PlaceRecognitionDataset(data_root, max_distance, distance_threshold)
+
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
     model = PlaceRecognitionModel()
+    trainer = pl.Trainer(accelerator="gpu",
+                         max_epochs=max_epochs)
 
-    # Set up the trainer and train the model
-    trainer = pl.Trainer(max_epochs=num_epochs, gpus=int(torch.cuda.is_available()), progress_bar_refresh_rate=20)
+    tun = Tuner(trainer)
+    lr_finder = tun.lr_find(model, dataloader, attr_name="lr")
+    fig = lr_finder.plot(suggest=True)
+    fig.show()
+    model.hparams.lr = lr_finder.suggestion()
+
     trainer.fit(model, dataloader)
 
 
