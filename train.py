@@ -42,6 +42,8 @@ def main():
 
     trainer.test(model, datamodule)
 
+    print(trainer.callback_metrics)
+
 
 if __name__ == '__main__':
     main()

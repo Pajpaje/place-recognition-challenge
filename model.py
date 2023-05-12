@@ -19,6 +19,7 @@ class DepthwiseSeparableConv(nn.Module):
 class PlaceRecognitionModel(pl.LightningModule):
     def __init__(self, lr=1e-3):
         super(PlaceRecognitionModel, self).__init__()
+        self.save_hyperparameters()
         self.lr = lr
         self.conv1 = nn.Conv2d(10, 32, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
@@ -44,6 +45,13 @@ class PlaceRecognitionModel(pl.LightningModule):
         outputs = self(data)
         loss = F.binary_cross_entropy(outputs, labels)
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        data, labels = batch
+        outputs = self(data)
+        loss = F.binary_cross_entropy(outputs, labels)
+        self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def configure_optimizers(self):
