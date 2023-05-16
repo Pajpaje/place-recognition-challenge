@@ -1,3 +1,6 @@
+import glob
+import os
+from random import shuffle
 from typing import Tuple, Union
 import numpy as np
 import torch
@@ -26,6 +29,39 @@ def parse_alog_file(alog_path):
                 coord_n = None
                 coord_e = None
     return gps_and_image_info
+
+
+def get_pairs_of_places(root_dir, max_distance, distance_threshold):
+    data = []
+
+    images_dir = os.path.join(root_dir, 'images')
+    raw_logs_dir = os.path.join(root_dir, 'Raw_Logs')
+
+    # Get a list of all .alog files recursively
+    alog_files = glob.glob(os.path.join(raw_logs_dir, '**/*.alog'), recursive=True)
+
+    gps_and_image_data = []
+    for alog_file in alog_files:
+        gps_and_image_data.extend(parse_alog_file(alog_file))
+    shuffle(gps_and_image_data)
+
+    # Iterate over image_data and create pairs of image sets
+    for i in range(len(gps_and_image_data)):
+        for j in range(i + 1, len(gps_and_image_data)):
+            dist = euclidean_distance(gps_and_image_data[i][0], gps_and_image_data[j][0])
+
+            if dist > max_distance:
+                continue
+            # TODO Sometimes we want to compare with places that are further than max_distance
+
+            label = 1 if dist <= distance_threshold else 0
+
+            # Get image paths for both sets of images
+            place_1 = [os.path.join(images_dir, img_name) for img_name in gps_and_image_data[i][1]]
+            place_2 = [os.path.join(images_dir, img_name) for img_name in gps_and_image_data[j][1]]
+
+            data.append((place_1, place_2, label))
+    return data
 
 
 def load_image(image_path):
