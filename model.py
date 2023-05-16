@@ -94,6 +94,7 @@ class PlaceRecognitionModel(pl.LightningModule):
         self.test_precision(outputs, labels)
         self.log('test_precision', self.test_precision, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.test_recall(outputs, labels)
+        self.log('test_recall', self.test_recall, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
 

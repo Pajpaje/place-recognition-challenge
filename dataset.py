@@ -67,6 +67,7 @@ class PlaceRecognitionDataModule(pl.LightningDataModule):
         self.dataset = dataset
         self.train_val_test_ratio = train_val_test_ratio
         self.batch_size = batch_size
+        self.num_workers = min(2, os.cpu_count())
 
     def setup(self, stage=None):
         # Calculate the lengths for train, validation, and test sets
@@ -85,10 +86,13 @@ class PlaceRecognitionDataModule(pl.LightningDataModule):
         self.test_dataset = test_dataset
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,
+                          pin_memory=True)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
+                          pin_memory=True)
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
+                          pin_memory=True)
