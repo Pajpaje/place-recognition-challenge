@@ -31,7 +31,7 @@ class PlaceConcatenationDataset(Dataset):
         return images, label
 
 
-class PlaceRecognitionDataModule(pl.LightningDataModule):
+class PlaceConcatenationDataModule(pl.LightningDataModule):
     def __init__(self, dataset, train_val_test_ratio=(0.8, 0.1, 0.1), batch_size=32):
         super().__init__()
         self.dataset = dataset
