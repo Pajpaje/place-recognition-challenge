@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 from utils import parse_alog_file, load_image, euclidean_distance, ResizeWithPad
 
 
-class PlaceRecognitionDataset(Dataset):
+class PlaceConcatenationDataset(Dataset):
     def __init__(self, root_dir, max_distance, distance_threshold):
         self.root_dir = root_dir
         self.max_distance = max_distance

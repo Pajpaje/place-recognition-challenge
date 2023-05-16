@@ -1,5 +1,5 @@
 import pytorch_lightning as pl
-from dataset import PlaceRecognitionDataset, PlaceRecognitionDataModule
+from dataset import PlaceConcatenationDataset, PlaceRecognitionDataModule
 from model import PlaceRecognitionModel
 from pytorch_lightning.tuner.tuning import Tuner
 
@@ -12,7 +12,7 @@ def main():
     batch_size = 16
     max_epochs = 25
 
-    dataset = PlaceRecognitionDataset(data_root, max_distance, distance_threshold)
+    dataset = PlaceConcatenationDataset(data_root, max_distance, distance_threshold)
     datamodule = PlaceRecognitionDataModule(dataset, batch_size=batch_size)
     model = PlaceRecognitionModel()
     trainer = pl.Trainer(accelerator="gpu",
