@@ -37,7 +37,7 @@ class PlaceConcatenationDataModule(pl.LightningDataModule):
         self.dataset = dataset
         self.train_val_test_ratio = train_val_test_ratio
         self.batch_size = batch_size
-        self.num_workers = min(2, os.cpu_count())
+        self.num_workers = os.cpu_count()
 
     def setup(self, stage=None):
         # Calculate the lengths for train, validation, and test sets

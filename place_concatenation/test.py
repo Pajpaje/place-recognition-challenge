@@ -1,5 +1,5 @@
 import pytorch_lightning as pl
-from dataset import PlaceConcatenationDataset, PlaceRecognitionDataModule
+from dataset import PlaceConcatenationDataset, PlaceConcatenationDataModule
 from model import PlaceRecognitionModel
 
 
@@ -14,7 +14,7 @@ def main():
     hparams_file = ""
 
     dataset = PlaceConcatenationDataset(data_root, max_distance, distance_threshold)
-    datamodule = PlaceRecognitionDataModule(dataset, batch_size=batch_size)
+    datamodule = PlaceConcatenationDataModule(dataset, batch_size=batch_size)
 
     # Load the model from the checkpoint
     model = PlaceRecognitionModel.load_from_checkpoint(checkpoint_path, hparams_file=hparams_file)
