@@ -2,23 +2,24 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
+from place_concatenation.model import DepthwiseSeparableConv
 
 
 class SiameseNetwork(pl.LightningModule):
     def __init__(self):
         super().__init__()
         self.base_network = nn.Sequential(
-            nn.Conv2d(5, 64, kernel_size=7, stride=2, padding=3),
-            nn.ReLU(),
+            DepthwiseSeparableConv(5, 64, kernel_size=7, padding=3),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2, padding=0),
+            DepthwiseSeparableConv(64, 128, kernel_size=3, padding=1),
+            nn.MaxPool2d(kernel_size=2, stride=2),
             nn.AdaptiveAvgPool2d((1, 1)),  # Global Average Pooling
             nn.Flatten(),
             nn.Linear(128, 512),
+            nn.BatchNorm1d(512),
             nn.ReLU(),
             nn.Linear(512, 256),
+            nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Linear(256, 128)
         )
