@@ -81,11 +81,12 @@ class ResizeWithPad:
             self._target_height, self._target_width = size[0], size[1]
         else:
             raise TypeError("Incorrect target shape (should be int or tuple of 2 integers)")
-        self._resize_transform = transforms.Resize(size=(self._target_height, self._target_width))
+        self._resize_transform = transforms.Resize(size=(self._target_height, self._target_width), antialias=False)
+        # set antialias=False to avoid a warning message ( TODO check if this is the best way to do it )
 
     def __call__(self, image: torch.Tensor) -> torch.Tensor:
         scaled_h, scaled_w = self.scaled_image_dims(image)
-        image = transforms.Resize(size=(scaled_h, scaled_w))(image)
+        image = transforms.Resize(size=(scaled_h, scaled_w), antialias=False)(image)
         vp = int((self._target_height - scaled_h) / 2)
         hp = int((self._target_width - scaled_w) / 2)
         padding = [hp, vp, hp + (scaled_w % 2) * (hp > 0), vp + (scaled_h % 2) * (vp > 0)]

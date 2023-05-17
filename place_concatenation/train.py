@@ -12,11 +12,16 @@ def main():
     batch_size = 16
     max_epochs = 25
 
+    # TODO test wandb logging
+    logger = WandbLogger(project="place-recognition-challenge", log_model=True)
+
+
     dataset = PlaceConcatenationDataset(data_root, max_distance, distance_threshold)
     datamodule = PlaceConcatenationDataModule(dataset, batch_size=batch_size)
     model = PlaceRecognitionModel()
     trainer = pl.Trainer(accelerator="gpu",
-                         max_epochs=max_epochs)
+                         max_epochs=max_epochs, profiler="simple", logger=logger)
+
 
     # Find hyperparameters automatically
     tuner = Tuner(trainer)

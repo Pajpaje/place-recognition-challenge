@@ -58,13 +58,13 @@ class PlaceRecognitionModel(pl.LightningModule):
         outputs = self(data)
         loss = F.binary_cross_entropy(outputs, labels)
 
-        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train/loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.train_accuracy(outputs, labels)
-        self.log('train_accuracy', self.train_accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train/accuracy', self.train_accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.train_precision(outputs, labels)
-        self.log('train_precision', self.train_precision, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train/precision', self.train_precision, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.train_recall(outputs, labels)
-        self.log('train_recall', self.train_recall, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train/recall', self.train_recall, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
 
@@ -73,13 +73,13 @@ class PlaceRecognitionModel(pl.LightningModule):
         outputs = self(data)
         loss = F.binary_cross_entropy(outputs, labels)
 
-        self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val/loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.val_accuracy(outputs, labels)
-        self.log('val_accuracy', self.val_accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val/accuracy', self.val_accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.val_precision(outputs, labels)
-        self.log('val_precision', self.val_precision, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val/precision', self.val_precision, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.val_recall(outputs, labels)
-        self.log('val_recall', self.val_recall, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val/recall', self.val_recall, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
 
@@ -88,13 +88,13 @@ class PlaceRecognitionModel(pl.LightningModule):
         outputs = self(data)
         loss = F.binary_cross_entropy(outputs, labels)
 
-        self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test/loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.test_accuracy(outputs, labels)
-        self.log('test_accuracy', self.test_accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test/accuracy', self.test_accuracy, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.test_precision(outputs, labels)
-        self.log('test_precision', self.test_precision, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test/precision', self.test_precision, on_step=True, on_epoch=True, prog_bar=True, logger=True)
         self.test_recall(outputs, labels)
-        self.log('test_recall', self.test_recall, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test/recall', self.test_recall, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
 
