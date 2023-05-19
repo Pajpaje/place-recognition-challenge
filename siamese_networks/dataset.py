@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import Compose, ToTensor
-from place_concatenation.dataset import PlaceConcatenationDataModule
 from utils import load_image, ResizeWithPad, get_pairs_of_places
 
 
@@ -29,4 +28,38 @@ class SiameseDataset(Dataset):
         return images_i, images_j, label
 
 
-SiameseDataModule = PlaceConcatenationDataModule
+class SiameseConcatenationDataModule(pl.LightningDataModule):
+    def __init__(self, dataset, train_val_test_ratio=(0.8, 0.1, 0.1), batch_size=32):
+        super().__init__()
+        self.dataset = dataset
+        self.train_val_test_ratio = train_val_test_ratio
+        self.batch_size = batch_size
+        self.num_workers = os.cpu_count()
+
+    def setup(self, stage=None):
+        # Calculate the lengths for train, validation, and test sets
+        total_length = len(self.dataset)
+        train_length = int(total_length * self.train_val_test_ratio[0])
+        val_length = int(total_length * self.train_val_test_ratio[1])
+        test_length = total_length - train_length - val_length
+
+        # Split the dataset into train, validation, and test sets
+        train_dataset, val_dataset, test_dataset = random_split(
+            self.dataset, [train_length, val_length, test_length]
+        )
+
+        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
+        self.test_dataset = test_dataset
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,
+                          pin_memory=True)
+
+    def val_dataloader(self):
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
+                          pin_memory=True)
+
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,
+                          pin_memory=True)
