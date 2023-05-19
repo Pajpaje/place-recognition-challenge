@@ -17,6 +17,9 @@ class SiameseNetwork(pl.LightningModule):
         # Replace the first layer to accommodate 5-channel input
         self.feature_extractor[0] = torch.nn.Conv2d(5, 64, kernel_size=(3, 3), stride=(2, 2))
 
+        # TODO see if the following line is necessary
+        self.feature_extractor.classifier = torch.nn.Identity()
+
         # Freeze all layers except the first one
         for name, param in self.feature_extractor.named_parameters():
             if not name.startswith('features.0'):  # The name of first layer usually starts with 'features.0'

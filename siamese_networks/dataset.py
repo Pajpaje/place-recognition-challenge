@@ -1,5 +1,8 @@
+import os
+
 import torch
-from torch.utils.data import Dataset
+import pytorch_lightning as pl
+from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision.transforms import Compose, ToTensor
 from utils import load_image, ResizeWithPad, get_pairs_of_places
 
@@ -14,6 +17,10 @@ class SiameseDataset(Dataset):
             ResizeWithPad(size=(256, 256))
         ])
         self.data = get_pairs_of_places(self.root_dir, self.max_distance, self.distance_threshold)
+        # TODO if ram can't save transformed images, save them to disk and load them in __getitem__ using
+
+        # TODO dvc pipelines and other solutions from the template may be useful l8r
+        # https://github.com/ashleve/lightning-hydra-template
 
     def __len__(self):
         return len(self.data)

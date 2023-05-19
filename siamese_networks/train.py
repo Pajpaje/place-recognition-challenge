@@ -1,19 +1,20 @@
 import pytorch_lightning as pl
-from dataset import SiameseDataset, SiameseDataModule
 from model import SiameseNetwork
 from pytorch_lightning.tuner.tuning import Tuner
+
+from siamese_networks.dataset import SiameseDataset, SiameseConcatenationDataModule
 
 
 def main():
     # Configuration
-    data_root = 'Eynsham'
+    data_root = '..\\Eynsham'
     max_distance = 1000
     distance_threshold = 200
     batch_size = 16
     max_epochs = 25
 
     dataset = SiameseDataset(data_root, max_distance, distance_threshold)
-    datamodule = SiameseDataModule(dataset, batch_size=batch_size)
+    datamodule = SiameseConcatenationDataModule(dataset, batch_size=batch_size)
     model = SiameseNetwork()
     trainer = pl.Trainer(accelerator="gpu",
                          max_epochs=max_epochs)
@@ -43,6 +44,7 @@ def main():
     trainer.test(model, datamodule)
 
     print(trainer.callback_metrics)
+    # TODO test wandb logging
 
 
 if __name__ == '__main__':

@@ -7,6 +7,9 @@ import torch
 from PIL import Image
 from torchvision import transforms
 import torchvision.transforms.functional as F
+from torchvision.transforms import Compose, ToTensor
+import pickle
+from tqdm import tqdm
 
 
 def parse_alog_file(alog_path):
@@ -100,3 +103,31 @@ class ResizeWithPad:
     def scaled_image_dims(self, image: torch.Tensor) -> Tuple[int, int]:
         r_factor = self.resize_factor(image)
         return int(image.shape[-2] / r_factor), int(image.shape[-1] / r_factor)
+
+
+def preprocess_images(data):
+    transform = Compose([
+        ToTensor(),
+        ResizeWithPad(size=(256, 256)),
+    ])
+
+    def get(idx):
+        images_i, images_j, label = data[idx]
+        images_i = [transform(load_image(img_path)).squeeze(0) for img_path in images_i]
+        images_i = torch.stack(images_i, dim=0)
+        images_j = [transform(load_image(img_path)).squeeze(0) for img_path in images_j]
+        images_j = torch.stack(images_j, dim=0)
+        images = torch.cat((images_i, images_j), dim=0)
+        label = torch.tensor(label, dtype=torch.float32)
+        return images, label
+
+    print(len(data))
+    #right now saves 1 image set only
+    with open("final_data.pkl", "wb") as f:
+        for i in tqdm(range(len(data))):
+            final_data = []
+            images, label = get(i)
+            final_data.append((images, label))
+            pickle.dump(final_data, f)
+            break
+
