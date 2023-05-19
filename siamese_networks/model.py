@@ -12,10 +12,10 @@ class SiameseNetwork(pl.LightningModule):
         self.learning_rate = learning_rate
 
         # Load pre-trained SqueezeNet
-        self.feature_extractor = models.squeezenet1_1(pretrained=True)
+        self.feature_extractor = models.squeezenet1_1(pretrained=True).features
 
         # Replace the first layer to accommodate 5-channel input
-        self.feature_extractor.features[0] = torch.nn.Conv2d(5, 64, kernel_size=(3, 3), stride=(2, 2))
+        self.feature_extractor[0] = torch.nn.Conv2d(5, 64, kernel_size=(3, 3), stride=(2, 2))
 
         # Freeze all layers except the first one
         for name, param in self.feature_extractor.named_parameters():
