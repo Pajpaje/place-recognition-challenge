@@ -31,7 +31,8 @@ class SiameseNetwork(pl.LightningModule):
         input1, input2, labels = batch
         output1, output2 = self.forward(input1, input2)
         distance = F.pairwise_distance(output1, output2)
-        loss = F.mse_loss(distance, labels.float())
+        similarity = torch.sigmoid(-distance)
+        loss = F.mse_loss(similarity, labels.float())
         self.log('train_loss', loss)
         return loss
 
