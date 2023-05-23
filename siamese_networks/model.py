@@ -12,22 +12,34 @@ class SiameseNetwork(pl.LightningModule):
         self.learning_rate = learning_rate
 
         # Load pre-trained SqueezeNet
-        self.feature_extractor = models.squeezenet1_1(pretrained=True).features
+        original_feature_extractor = models.squeezenet1_1(pretrained=True).features
 
-        # Replace the first layer to accommodate 5-channel input
-        self.feature_extractor[0] = torch.nn.Conv2d(5, 64, kernel_size=(3, 3), stride=(2, 2))
+        # Create new first layer to accommodate 5-channel input
+        new_first_layer = torch.nn.Conv2d(5, 64, kernel_size=(3, 3), stride=(2, 2))
 
-        # TODO see if the following line is necessary
-        self.feature_extractor.classifier = torch.nn.Identity()
+        # Create new feature extractor with the new first layer and the rest of the original layers
+        self.feature_extractor = nn.Sequential(
+            new_first_layer,
+            *original_feature_extractor[1:]
+        )
 
-        # Freeze all layers except the first one
-        for name, param in self.feature_extractor.named_parameters():
-            if not name.startswith('features.0'):  # The name of first layer usually starts with 'features.0'
-                param.requires_grad = False
+        # Freeze all layers
+        for param in self.feature_extractor.parameters():
+            param.requires_grad = False
+
+        # Unfreeze the first layer and the last layer of the last module
+        next(self.feature_extractor.parameters()).requires_grad = True
+        for param in self.feature_extractor[-1].parameters():
+            param.requires_grad = True
+
+        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))
 
     def forward(self, input1, input2):
         output1 = self.feature_extractor(input1)
         output2 = self.feature_extractor(input2)
+        output1 = self.global_avg_pool(output1)
+        output2 = self.global_avg_pool(output2)
+        output1, output2 = output1.view(output1.size(0), -1), output2.view(output2.size(0), -1)
         return output1, output2
 
     def training_step(self, batch, batch_idx):
