@@ -3,8 +3,7 @@ import os
 import torch
 import pytorch_lightning as pl
 from torch.utils.data import Dataset, DataLoader, random_split
-from torchvision.transforms import Compose, ToTensor
-from utils import load_image, ResizeWithPad, get_pairs_of_places
+from utils import load_image, ResizeWithPad, get_pairs_of_places, get_pairs_of_preprocessed_places
 
 
 class SiameseDataset(Dataset):
@@ -12,13 +11,7 @@ class SiameseDataset(Dataset):
         self.root_dir = root_dir
         self.max_distance = max_distance
         self.distance_threshold = distance_threshold
-        self.transform = Compose([
-            ToTensor(),
-            ResizeWithPad(size=(256, 256))
-        ])
-        self.data = get_pairs_of_places(self.root_dir, self.max_distance, self.distance_threshold)
-        # TODO if ram can't save transformed images, save them to disk and load them in __getitem__ using
-
+        self.data = get_pairs_of_preprocessed_places(self.root_dir, self.max_distance, self.distance_threshold)
         # TODO dvc pipelines and other solutions from the template may be useful l8r
         # https://github.com/ashleve/lightning-hydra-template
 
@@ -26,13 +19,12 @@ class SiameseDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        images_i, images_j, label = self.data[idx]
-        images_i = [torch.load(img_path) for img_path in images_i]
-        images_i = torch.stack(images_i, dim=0)
-        images_j = [torch.load(img_path) for img_path in images_j]
-        images_j = torch.stack(images_j, dim=0)
+        print(idx)
+        place_i, place_j, label = self.data[idx]
+        place_i = torch.load(place_i)
+        place_j = torch.load(place_j)
         label = torch.tensor(label, dtype=torch.float32)
-        return images_i, images_j, label
+        return place_i, place_j, label
 
 
 class SiameseConcatenationDataModule(pl.LightningDataModule):

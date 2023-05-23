@@ -8,7 +8,6 @@ from PIL import Image
 from torchvision import transforms
 import torchvision.transforms.functional as F
 from torchvision.transforms import Compose, ToTensor
-import pickle
 from tqdm import tqdm
 
 
@@ -63,6 +62,33 @@ def get_pairs_of_places(root_dir, max_distance, distance_threshold, transformed=
     return data
 
 
+def get_pairs_of_preprocessed_places(root_dir, max_distance, distance_threshold):
+    data = []
+
+    images_dir = os.path.join(root_dir, 'Transformed_Images_stacked')
+    gps_and_image_data = get_list_of_preprocessed_images_locations(root_dir)
+    shuffle(gps_and_image_data)
+
+    # Iterate over image_data and create pairs of image sets
+    for i in range(200):
+        print(i)
+        for j in range(i + 1, 200):
+            dist = euclidean_distance(gps_and_image_data[i], gps_and_image_data[j])
+
+            if dist > max_distance:
+                continue
+            # TODO Sometimes we want to compare with places that are further than max_distance
+
+            label = 1 if dist <= distance_threshold else 0
+
+            # Get image paths for both sets of images
+            place_1 = os.path.join(images_dir, f'{gps_and_image_data[i]}.pt')
+            place_2 = os.path.join(images_dir, f'{gps_and_image_data[j]}.pt')
+
+            data.append((place_1, place_2, label))
+    return data
+
+
 def get_list_of_place_images(root_dir):
     raw_logs_dir = os.path.join(root_dir, 'Raw_Logs')
 
@@ -74,6 +100,17 @@ def get_list_of_place_images(root_dir):
         print(alog_file)
         gps_and_image_data.extend(parse_alog_file(alog_file))
     return gps_and_image_data
+
+
+def get_list_of_preprocessed_images_locations(root_dir):
+    """Returns a list of filenames loaded from Transformed_Images_stacked in the given root_dir as tuples of
+    coordinates"""
+
+    # files are in format similar to (1.324, -6525.001).pt
+    images_dir = os.path.join(root_dir, 'Transformed_Images_stacked')
+    image_files = glob.glob(os.path.join(images_dir, '*.pt'))
+    return [(float(file.split('/')[-1].split('(')[1].split(')')[0].split(',')[0]),
+             float(file.split('/')[-1].split('(')[1].split(')')[0].split(',')[1])) for file in image_files]
 
 
 def load_image(image_path):
@@ -123,7 +160,7 @@ def preprocess_images(root_dir):
 
     gps_and_image_data = get_list_of_place_images(root_dir)
     original_images_dir = os.path.join(root_dir, 'Images')
-    transformed_images_dir = os.path.join(root_dir, 'Transformed_Images')
+    transformed_images_dir = os.path.join(root_dir, 'Transformed_Images_stacked')
 
     # stop if the directory already exists and is not empty
     if os.path.exists(transformed_images_dir) and os.listdir(transformed_images_dir):
@@ -134,18 +171,10 @@ def preprocess_images(root_dir):
         os.makedirs(transformed_images_dir)
 
     for gps, image_names in tqdm(gps_and_image_data):
-        for image_name in image_names:
-            # Load image
-            image_path = os.path.join(original_images_dir, image_name)
-            image = load_image(image_path)
 
-            # Transform image
-            transformed_image = transform(image).squeeze(0)
-            # transformed_image = torch.stack(transformed_image, dim=0)
-
-            # Save transformed image
-            transformed_image_path = os.path.join(transformed_images_dir, image_name)
-            torch.save(transformed_image, transformed_image_path)
+        transformed_images = [transform(load_image(os.path.join(original_images_dir, image_name))).squeeze(0) for image_name in image_names]
+        transformed_images = torch.stack(transformed_images, dim=0)
+        torch.save(transformed_images, os.path.join(transformed_images_dir, str(gps) + '.pt'))
 
 
 if __name__ == '__main__':
