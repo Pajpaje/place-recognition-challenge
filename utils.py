@@ -34,18 +34,14 @@ def parse_alog_file(alog_path):
     return gps_and_image_info
 
 
-def get_pairs_of_places(root_dir, max_distance, distance_threshold):
+def get_pairs_of_places(root_dir, max_distance, distance_threshold, transformed=True):
     data = []
 
-    images_dir = os.path.join(root_dir, 'images')
-    raw_logs_dir = os.path.join(root_dir, 'Raw_Logs')
-
-    # Get a list of all .alog files recursively
-    alog_files = glob.glob(os.path.join(raw_logs_dir, '**/*.alog'), recursive=True)
-
-    gps_and_image_data = []
-    for alog_file in alog_files:
-        gps_and_image_data.extend(parse_alog_file(alog_file))
+    if transformed:
+        images_dir = os.path.join(root_dir, 'Transformed_Images')
+    else:
+        images_dir = os.path.join(root_dir, 'images')
+    gps_and_image_data = get_list_of_place_images(root_dir)
     shuffle(gps_and_image_data)
 
     # Iterate over image_data and create pairs of image sets
@@ -67,6 +63,19 @@ def get_pairs_of_places(root_dir, max_distance, distance_threshold):
     return data
 
 
+def get_list_of_place_images(root_dir):
+    raw_logs_dir = os.path.join(root_dir, 'Raw_Logs')
+
+    # Get a list of all .alog files recursively
+    alog_files = glob.glob(os.path.join(raw_logs_dir, '**/*.alog'), recursive=True)
+
+    gps_and_image_data = []
+    for alog_file in alog_files:
+        print(alog_file)
+        gps_and_image_data.extend(parse_alog_file(alog_file))
+    return gps_and_image_data
+
+
 def load_image(image_path):
     return Image.open(image_path)
 
@@ -77,6 +86,7 @@ def euclidean_distance(point1, point2):
 
 class ResizeWithPad:
     """Resizes and pads an image to a target height and width without distortion."""
+
     def __init__(self, size: Union[int, Tuple[int, int]]):
         if type(size) is int:
             self._target_height = self._target_width = size
@@ -105,29 +115,38 @@ class ResizeWithPad:
         return int(image.shape[-2] / r_factor), int(image.shape[-1] / r_factor)
 
 
-def preprocess_images(data):
+def preprocess_images(root_dir):
     transform = Compose([
         ToTensor(),
-        ResizeWithPad(size=(256, 256)),
+        ResizeWithPad(size=(256, 256))
     ])
 
-    def get(idx):
-        images_i, images_j, label = data[idx]
-        images_i = [transform(load_image(img_path)).squeeze(0) for img_path in images_i]
-        images_i = torch.stack(images_i, dim=0)
-        images_j = [transform(load_image(img_path)).squeeze(0) for img_path in images_j]
-        images_j = torch.stack(images_j, dim=0)
-        images = torch.cat((images_i, images_j), dim=0)
-        label = torch.tensor(label, dtype=torch.float32)
-        return images, label
+    gps_and_image_data = get_list_of_place_images(root_dir)
+    original_images_dir = os.path.join(root_dir, 'Images')
+    transformed_images_dir = os.path.join(root_dir, 'Transformed_Images')
 
-    print(len(data))
-    #right now saves 1 image set only
-    with open("final_data.pkl", "wb") as f:
-        for i in tqdm(range(len(data))):
-            final_data = []
-            images, label = get(i)
-            final_data.append((images, label))
-            pickle.dump(final_data, f)
-            break
+    # stop if the directory already exists and is not empty
+    if os.path.exists(transformed_images_dir) and os.listdir(transformed_images_dir):
+        raise Exception(f"Directory {transformed_images_dir} already exists and is not empty")
 
+    # create the directory if it doesn't exist
+    if not os.path.exists(transformed_images_dir):
+        os.makedirs(transformed_images_dir)
+
+    for gps, image_names in tqdm(gps_and_image_data):
+        for image_name in image_names:
+            # Load image
+            image_path = os.path.join(original_images_dir, image_name)
+            image = load_image(image_path)
+
+            # Transform image
+            transformed_image = transform(image).squeeze(0)
+            # transformed_image = torch.stack(transformed_image, dim=0)
+
+            # Save transformed image
+            transformed_image_path = os.path.join(transformed_images_dir, image_name)
+            torch.save(transformed_image, transformed_image_path)
+
+
+if __name__ == '__main__':
+    preprocess_images('Eynsham')

@@ -27,9 +27,9 @@ class SiameseDataset(Dataset):
 
     def __getitem__(self, idx):
         images_i, images_j, label = self.data[idx]
-        images_i = [self.transform(load_image(img_path)).squeeze(0) for img_path in images_i]
+        images_i = [torch.load(img_path) for img_path in images_i]
         images_i = torch.stack(images_i, dim=0)
-        images_j = [self.transform(load_image(img_path)).squeeze(0) for img_path in images_j]
+        images_j = [torch.load(img_path) for img_path in images_j]
         images_j = torch.stack(images_j, dim=0)
         label = torch.tensor(label, dtype=torch.float32)
         return images_i, images_j, label
