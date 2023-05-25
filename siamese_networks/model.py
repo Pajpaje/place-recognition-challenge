@@ -1,4 +1,5 @@
 import torch
+import torchmetrics
 from torch import nn
 import torch.nn.functional as F
 from torchvision import models
@@ -6,9 +7,10 @@ import pytorch_lightning as pl
 
 
 class SiameseNetwork(pl.LightningModule):
-    def __init__(self, learning_rate=1e-3):
+    def __init__(self, learning_rate=1e-4):
         super().__init__()
 
+        self.save_hyperparameters()
         self.learning_rate = learning_rate
 
         # Load pre-trained SqueezeNet
@@ -23,16 +25,16 @@ class SiameseNetwork(pl.LightningModule):
             *original_feature_extractor[1:]
         )
 
-        # Freeze all layers
-        for param in self.feature_extractor.parameters():
-            param.requires_grad = False
-
-        # Unfreeze the first layer and the last layer of the last module
-        next(self.feature_extractor.parameters()).requires_grad = True
-        for param in self.feature_extractor[-1].parameters():
-            param.requires_grad = True
-
         self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+
+        self.train_accuracy = torchmetrics.Accuracy(task='binary')
+        self.train_f1 = torchmetrics.classification.BinaryF1Score()
+
+        self.val_accuracy = torchmetrics.Accuracy(task='binary')
+        self.val_f1 = torchmetrics.classification.BinaryF1Score()
+
+        self.test_accuracy = torchmetrics.Accuracy(task='binary')
+        self.test_f1 = torchmetrics.classification.BinaryF1Score()
 
     def forward(self, input1, input2):
         output1 = self.feature_extractor(input1)
@@ -47,10 +49,46 @@ class SiameseNetwork(pl.LightningModule):
         output1, output2 = self.forward(input1, input2)
         distance = F.pairwise_distance(output1, output2)
         similarity = torch.sigmoid(-distance)
-        loss = F.mse_loss(similarity, labels.float())
-        self.log('train_loss', loss)
+        loss = F.binary_cross_entropy(similarity, labels.float())
+
+        self.log('train/loss', loss)
+        self.train_accuracy(similarity, labels.float())
+        self.log('train/accuracy', self.train_accuracy)
+        self.train_f1(similarity, labels.float())
+        self.log('train/f1', self.train_f1)
+
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        input1, input2, labels = batch
+        output1, output2 = self.forward(input1, input2)
+        distance = F.pairwise_distance(output1, output2)
+        similarity = torch.sigmoid(-distance)
+        loss = F.binary_cross_entropy(similarity, labels.float())
+
+        self.log('val/loss', loss)
+        self.val_accuracy(similarity, labels)
+        self.log('val/accuracy', self.val_accuracy)
+        self.val_f1(similarity, labels)
+        self.log('val/f1', self.val_f1)
+
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        input1, input2, labels = batch
+        output1, output2 = self.forward(input1, input2)
+        distance = F.pairwise_distance(output1, output2)
+        similarity = torch.sigmoid(-distance)
+        loss = F.binary_cross_entropy(similarity, labels.float())
+
+        self.log('test/loss', loss)
+        self.test_accuracy(similarity, labels)
+        self.log('test/accuracy', self.test_accuracy)
+        self.test_f1(similarity, labels)
+        self.log('test/f1', self.test_f1)
+
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer

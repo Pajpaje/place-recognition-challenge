@@ -80,6 +80,11 @@ def get_pairs_of_preprocessed_places(root_dir, max_distance, distance_threshold)
             # TODO Sometimes we want to compare with places that are further than max_distance
 
             label = 1 if dist <= distance_threshold else 0
+            # TODO linear label instead of binary
+            # if dist <= distance_threshold:
+            #     label = abs(dist - distance_threshold)/distance_threshold
+            # else:
+            #     label = 0
 
             # Get image paths for both sets of images
             place_1 = os.path.join(images_dir, f'{gps_and_image_data[i]}.pt')
@@ -170,8 +175,8 @@ def preprocess_images(root_dir):
     if not os.path.exists(transformed_images_dir):
         os.makedirs(transformed_images_dir)
 
+    # Iterate over image_data and create pairs of image sets
     for gps, image_names in tqdm(gps_and_image_data):
-
         transformed_images = [transform(load_image(os.path.join(original_images_dir, image_name))).squeeze(0) for image_name in image_names]
         transformed_images = torch.stack(transformed_images, dim=0)
         torch.save(transformed_images, os.path.join(transformed_images_dir, str(gps) + '.pt'))
