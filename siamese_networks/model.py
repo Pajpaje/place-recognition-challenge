@@ -6,6 +6,23 @@ from torchvision import models
 import pytorch_lightning as pl
 
 
+class ContrastiveLoss(torch.nn.Module):
+    def __init__(self, margin=1.0):
+        super(ContrastiveLoss, self).__init__()
+        self.margin = margin
+
+    def forward(self, x0, x1, y):
+        diff = x0 - x1
+        dist_sq = torch.sum(torch.pow(diff, 2), 1)
+        dist = torch.sqrt(dist_sq)
+
+        mdist = self.margin - dist
+        dist = torch.clamp(mdist, min=0.0)
+        loss = y * dist_sq + (1 - y) * torch.pow(dist, 2)
+        loss = torch.sum(loss) / 2.0 / x0.size()[0]
+        return loss
+
+
 class SiameseNetwork(pl.LightningModule):
     def __init__(self, learning_rate=1e-4):
         super().__init__()
@@ -27,6 +44,8 @@ class SiameseNetwork(pl.LightningModule):
 
         self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))
 
+        self.criterion = ContrastiveLoss()
+
         self.train_accuracy = torchmetrics.Accuracy(task='binary')
         self.train_f1 = torchmetrics.classification.BinaryF1Score()
 
@@ -47,9 +66,7 @@ class SiameseNetwork(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         input1, input2, labels = batch
         output1, output2 = self.forward(input1, input2)
-        distance = F.pairwise_distance(output1, output2)
-        similarity = torch.sigmoid(-distance)
-        loss = F.binary_cross_entropy(similarity, labels.float())
+        loss = self.criterion(output1, output2, label)
 
         self.log('train/loss', loss)
         self.train_accuracy(similarity, labels.float())
@@ -62,9 +79,7 @@ class SiameseNetwork(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         input1, input2, labels = batch
         output1, output2 = self.forward(input1, input2)
-        distance = F.pairwise_distance(output1, output2)
-        similarity = torch.sigmoid(-distance)
-        loss = F.binary_cross_entropy(similarity, labels.float())
+        loss = self.criterion(output1, output2, label)
 
         self.log('val/loss', loss)
         self.val_accuracy(similarity, labels)
@@ -77,9 +92,7 @@ class SiameseNetwork(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         input1, input2, labels = batch
         output1, output2 = self.forward(input1, input2)
-        distance = F.pairwise_distance(output1, output2)
-        similarity = torch.sigmoid(-distance)
-        loss = F.binary_cross_entropy(similarity, labels.float())
+        loss = self.criterion(output1, output2, label)
 
         self.log('test/loss', loss)
         self.test_accuracy(similarity, labels)
