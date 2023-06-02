@@ -11,7 +11,7 @@ class ContrastiveLoss(torch.nn.Module):
         super(ContrastiveLoss, self).__init__()
         self.margin = margin
 
-    def forward(self, x0, x1, y):
+    def __call__(self, x0, x1, y):
         diff = x0 - x1
         dist_sq = torch.sum(torch.pow(diff, 2), 1)
         dist = torch.sqrt(dist_sq)
@@ -66,39 +66,51 @@ class SiameseNetwork(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         input1, input2, labels = batch
         output1, output2 = self.forward(input1, input2)
-        loss = self.criterion(output1, output2, label)
+        loss = self.criterion(output1, output2, labels)
 
         self.log('train/loss', loss)
-        self.train_accuracy(similarity, labels.float())
-        self.log('train/accuracy', self.train_accuracy)
-        self.train_f1(similarity, labels.float())
-        self.log('train/f1', self.train_f1)
+        # self.train_accuracy(similarity, labels.float())
+        # self.log('train/accuracy', self.train_accuracy)
+        # self.train_f1(similarity, labels.float())
+        # self.log('train/f1', self.train_f1)
+        # self.train_precision(similarity, labels.float())
+        # self.log('train/precision', self.train_precision)
+        # self.train_recall(similarity, labels.float())
+        # self.log('train/recall', self.train_recall)
 
         return loss
 
     def validation_step(self, batch, batch_idx):
         input1, input2, labels = batch
         output1, output2 = self.forward(input1, input2)
-        loss = self.criterion(output1, output2, label)
+        loss = self.criterion(output1, output2, labels)
 
         self.log('val/loss', loss)
-        self.val_accuracy(similarity, labels)
-        self.log('val/accuracy', self.val_accuracy)
-        self.val_f1(similarity, labels)
-        self.log('val/f1', self.val_f1)
+        # self.val_accuracy(similarity, labels.float())
+        # self.log('val/accuracy', self.val_accuracy)
+        # self.val_f1(similarity, labels.float())
+        # self.log('val/f1', self.val_f1)
+        # self.val_precision(similarity, labels.float())
+        # self.log('val/precision', self.val_precision)
+        # self.val_recall(similarity, labels.float())
+        # self.log('val/recall', self.val_recall)
 
         return loss
 
     def test_step(self, batch, batch_idx):
         input1, input2, labels = batch
         output1, output2 = self.forward(input1, input2)
-        loss = self.criterion(output1, output2, label)
+        loss = self.criterion(output1, output2, labels)
 
         self.log('test/loss', loss)
-        self.test_accuracy(similarity, labels)
-        self.log('test/accuracy', self.test_accuracy)
-        self.test_f1(similarity, labels)
-        self.log('test/f1', self.test_f1)
+        # self.test_accuracy(similarity, labels.float())
+        # self.log('test/accuracy', self.test_accuracy)
+        # self.test_f1(similarity, labels.float())
+        # self.log('test/f1', self.test_f1)
+        # self.test_precision(similarity, labels.float())
+        # self.log('test/precision', self.test_precision)
+        # self.test_recall(similarity, labels.float())
+        # self.log('test/recall', self.test_recall)
 
         return loss
 
